@@ -33,7 +33,12 @@ class _RegisterPageState extends State<RegisterPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   String? _parlourname, _email, _phone, _password, _location, _description, _licenceNumber;
+   String? _category;
+      // New variable to hold the selected category
   final ApiService _apiService = ApiService();
+  // Default rating value
+  final double _initialRating = 0.0;
+
 
   @override
   void dispose() {
@@ -105,6 +110,33 @@ class _RegisterPageState extends State<RegisterPage> {
                       validator: (value) => value!.isEmpty ? 'Please enter your location' : null,
                     ),
                     const SizedBox(height: 16.0),
+                    // Category Dropdown Field
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: 'Category',
+                        labelStyle: const TextStyle(color: Colors.black),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.8),
+                      ),
+                      value: _category,
+                      items: ['Men', 'Women', 'Unisex'].map((String category) {
+                        return DropdownMenuItem<String>(
+                          value: category,
+                          child: Text(category),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _category = value;
+                        });
+                      },
+                      validator: (value) => value == null ? 'Please select a category' : null,
+                      onSaved: (value) => _category = value,
+                    ),
+                    const SizedBox(height: 16.0),
 
                     // Description Field
                     _buildTextField(
@@ -114,7 +146,15 @@ class _RegisterPageState extends State<RegisterPage> {
                       maxLines: 3,
                     ),
                     const SizedBox(height: 16.0),
-
+                     // Static Star Rating Display (set to 0 stars)
+                    Row(
+                      children: List.generate(5, (index) {
+                        return const Icon(
+                          Icons.star_border, // Empty star icon
+                          color: Colors.grey,
+                        );
+                      }),
+                    ),
                     // License Number Field
                     _buildTextField(
                       label: 'License Number',
@@ -159,6 +199,8 @@ class _RegisterPageState extends State<RegisterPage> {
                             'password': _password!,
                             'description': _description!,
                             'licenceNumber': _licenceNumber!,
+                             'category': _category!, 
+                               'rating': _initialRating.toString(), 
                           };
                           bool success = await _apiService.registerUser(registrationData);
 
@@ -174,6 +216,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                   password: _password!,
                                   description: _description!,
                                   licenceNumber: _licenceNumber!,
+                                  category: _category!, 
+                                  rating: _initialRating,
                                 ),
                               ),
                             );

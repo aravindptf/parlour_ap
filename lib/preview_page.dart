@@ -1,5 +1,6 @@
 
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:parlour/imageupload.dart';
 
@@ -12,6 +13,7 @@ class PreviewPage extends StatelessWidget {
   final String password;
   final String description;
   final String licenceNumber;
+  final String category;
 
   const PreviewPage({
     Key? key,
@@ -22,6 +24,7 @@ class PreviewPage extends StatelessWidget {
     required this.password,
     required this.description,
     required this.licenceNumber, 
+    required this.category, required double rating, 
   }) : super(key: key);
 
   @override
@@ -39,6 +42,9 @@ class PreviewPage extends StatelessWidget {
             Text('Phone: $phone',style: TextStyle(fontSize: 30),),
             Text('Description: $description',style: TextStyle(fontSize: 30),),
             Text('Licence Number: $licenceNumber',style: TextStyle(fontSize: 30),),
+            Text('Category: $category',style: TextStyle(fontSize: 30),),
+
+
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
@@ -53,6 +59,7 @@ class PreviewPage extends StatelessWidget {
                     password: password,
                     description: description,
                     licenceNumber: licenceNumber,
+                    category: Category,
                   )),
                 );
               },

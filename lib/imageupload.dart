@@ -18,7 +18,7 @@ class ImageUploadPage extends StatefulWidget {
     required this.email,
     required this.phone,
     required this.password,
-    required this.licenceNumber,
+    required this.licenceNumber, required Type category,
   }) : super(key: key);
 
   @override
