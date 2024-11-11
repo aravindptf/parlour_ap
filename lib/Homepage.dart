@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:parlour/Appoinment.dart';
 import 'package:parlour/notification.dart'; // Import your Notification page
 import 'package:parlour/profile.dart'; // Import your Profile page
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -34,7 +35,7 @@ class _HomepageState extends State<Homepage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(),
+      
       
       // Set the body of the Scaffold based on selected index
       body: _pages[selectedIndex],
@@ -59,7 +60,38 @@ class _HomepageState extends State<Homepage> {
   }
 
   // Build the AppBar
-  AppBar _buildAppBar() {
+  
+}
+
+// HomeContent Widget: The main content for the homepage
+class HomeContent extends StatefulWidget {
+  const HomeContent({super.key});
+
+  @override
+  State<HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> {
+  int activateIndex = 0; // Track the active index of the carousel
+
+  final List<String> imageList = [
+    'assets/salon1.jpg',
+    'assets/salon2.jpg',
+    'assets/salon 3.avif',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _buildAppBar(),
+        SizedBox(height: 30),
+        _buildCarouselSlider(),
+        Expanded(child: _buildVerticalOptions()), // Fill the remaining space with options
+      ],
+    );
+  }
+AppBar _buildAppBar() {
     return AppBar(
       title: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -93,36 +125,6 @@ class _HomepageState extends State<Homepage> {
       ],
     );
   }
-}
-
-// HomeContent Widget: The main content for the homepage
-class HomeContent extends StatefulWidget {
-  const HomeContent({super.key});
-
-  @override
-  State<HomeContent> createState() => _HomeContentState();
-}
-
-class _HomeContentState extends State<HomeContent> {
-  int activateIndex = 0; // Track the active index of the carousel
-
-  final List<String> imageList = [
-    'assets/salon1.jpg',
-    'assets/salon2.jpg',
-    'assets/salon 3.avif',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(height: 30),
-        _buildCarouselSlider(),
-        Expanded(child: _buildVerticalOptions()), // Fill the remaining space with options
-      ],
-    );
-  }
-
   // Build the Carousel Slider
   Widget _buildCarouselSlider() {
     return Column(
@@ -190,8 +192,16 @@ class _HomeContentState extends State<HomeContent> {
   Widget _buildOptionContainer(String title) {
     return GestureDetector(
       onTap: () {
-        // Handle the tap action, you can navigate to another page or perform an action
-        print('$title tapped');
+        if (title == "Appointments") {
+          // Navigate to the AppointmentsPage
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AppointmentsPage()),
+          );
+        } else {
+          // Handle other taps here (e.g., Employees, Services)
+          print('$title tapped');
+        }
       },
       child: Container(
         padding: EdgeInsets.all(20),
