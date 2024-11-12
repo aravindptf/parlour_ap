@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:parlour/Appoinment.dart';
+import 'package:parlour/Map_page.dart';
 import 'package:parlour/notification.dart'; // Import your Notification page
 import 'package:parlour/profile.dart'; // Import your Profile page
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -92,39 +93,60 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 AppBar _buildAppBar() {
-    return AppBar(
-      title: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Text(
-          '', // AppBar title
-          style: GoogleFonts.adamina(color: Colors.white, fontSize: 30),
-        ),
+  return AppBar(
+    title: Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Text(
+        '', // AppBar title
+        style: GoogleFonts.adamina(color: Colors.white, fontSize: 30),
       ),
-      backgroundColor: Colors.black26,
-      toolbarHeight: 150,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          bottomRight: Radius.circular(25),
-          bottomLeft: Radius.circular(25),
-        ),
+    ),
+    backgroundColor: Colors.black26,
+    toolbarHeight: 150,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.only(
+        bottomRight: Radius.circular(25),
+        bottomLeft: Radius.circular(25),
       ),
-      automaticallyImplyLeading: false,
-      actions: [
-        Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Container(
-            width: 60,
-            height: 60,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            // Add an icon or image for settings
+    ),
+    automaticallyImplyLeading: false,
+    leading: Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Transform.translate(
+        offset: Offset(0, -40), // Move the icon 10 pixels upwards (adjust this value as needed)
+        child: IconButton(
+          icon: Icon(
+            Icons.location_on, // Location icon
+            color: Colors.white, // Icon color
+            size: 30, // Icon size
           ),
+           onPressed: () {
+            // Navigate to the MapPage when the location button is pressed
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const Mappage()),
+            );
+          },
         ),
-      ],
-    );
-  }
+      ),
+    ),
+    actions: [
+      // Optional: You can keep the existing settings button or remove it if not needed
+      Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Container(
+          width: 60,
+          height: 60,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+          // Add an icon or image for settings
+        ),
+      ),
+    ],
+  );
+}
   // Build the Carousel Slider
   Widget _buildCarouselSlider() {
     return Column(

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:parlour/Homepage.dart';
 import 'package:parlour/register.dart';
- // Import your RegisterPage widget
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,13 +16,16 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  // Boolean variable to toggle the password visibility
+  bool _isPasswordVisible = false;
+
   void _login() async {
     if (_formKey.currentState!.validate()) {
       final String username = _usernameController.text;
       final String password = _passwordController.text;
 
       // Replace with your backend URL
-      final url = 'http://192.168.1.8:8086/parlour/ParlourLogin';
+      final url = 'http://192.168.1.35:8086/parlour/ParlourLogin';
 
       try {
         final response = await http.post(
@@ -32,7 +34,6 @@ class _LoginPageState extends State<LoginPage> {
           body: jsonEncode({
             'email': username,
             'password': password,
-            
           }),
         );
 
@@ -113,10 +114,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _forgotPassword() {
-     Navigator.push(
+    Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => Homepage(),
-     ));
+      MaterialPageRoute(builder: (context) => Homepage()),
+    );
     // Implement forgot password functionality here
   }
 
@@ -154,17 +155,7 @@ class _LoginPageState extends State<LoginPage> {
                             return null;
                           },
                         ),
-                        _buildTextField(
-                          controller: _passwordController,
-                          label: 'Password',
-                          obscureText: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            return null;
-                          },
-                        ),
+                        _buildPasswordTextField(),
                       ],
                     ),
                   ),
@@ -209,6 +200,47 @@ class _LoginPageState extends State<LoginPage> {
           filled: true,
         ),
         validator: validator,
+      ),
+    );
+  }
+
+  Widget _buildPasswordTextField() {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: _passwordController,
+        obscureText: !_isPasswordVisible, // Toggle visibility
+        decoration: InputDecoration(
+          labelText: 'Password',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(30.0),
+            borderSide: const BorderSide(color: Colors.black),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(30.0),
+            borderSide: const BorderSide(color: Colors.black),
+          ),
+          fillColor: Colors.white.withOpacity(0.8),
+          filled: true,
+          suffixIcon: IconButton(
+            icon: Icon(
+              _isPasswordVisible
+                  ? Icons.visibility
+                  : Icons.visibility_off,
+            ),
+            onPressed: () {
+              setState(() {
+                _isPasswordVisible = !_isPasswordVisible;
+              });
+            },
+          ),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Please enter your password';
+          }
+          return null;
+        },
       ),
     );
   }
