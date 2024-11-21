@@ -3,8 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:parlour/Appoinment.dart';
 import 'package:parlour/Map_page.dart';
+
 import 'package:parlour/notification.dart'; // Import your Notification page
 import 'package:parlour/profile.dart'; // Import your Profile page
+import 'package:parlour/servicespage.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 
@@ -220,6 +222,11 @@ AppBar _buildAppBar() {
             context,
             MaterialPageRoute(builder: (context) => const AppointmentsPage()),
           );
+           } else if (title == "Services") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const Servicespage()),
+        );
         } else {
           // Handle other taps here (e.g., Employees, Services)
           print('$title tapped');
