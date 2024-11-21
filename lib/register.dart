@@ -1,9 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:parlour/preview_page.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart'; // Import the rating bar package
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:parlour/Homepage.dart'; // Import the rating bar package
 
 class ApiService {
   final String _baseUrl = 'http://192.168.1.35:8086/parlour/ParlourReg';
@@ -173,8 +172,8 @@ class _RegisterPageState extends State<RegisterPage> {
                           value!.isEmpty ? 'Please enter a description' : null,
                       maxLines: 3,
                     ),
-                     // Add the Rating Field (non-interactive)
-                    
+                    // Add the Rating Field (non-interactive)
+
                     const Text('Rating:', style: TextStyle(fontSize: 18)),
                     RatingBar.builder(
                       initialRating: 0,
@@ -219,7 +218,6 @@ class _RegisterPageState extends State<RegisterPage> {
                       },
                     ),
                     const SizedBox(height: 16.0),
-                   
 
                     // Image Uploads
                     GestureDetector(
@@ -295,6 +293,20 @@ class _RegisterPageState extends State<RegisterPage> {
                                 const SnackBar(
                                     content: Text(
                                         'Registration failed. Please try again.')));
+                          }
+                          if (isRegistered) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => Homepage(
+                                  coverImagePath: _coverImage?.path,
+                                  profileImagePath: _profileImage?.path,
+                                ),
+                              ),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(
+                                    'Registration successful for $_parlourname')));
                           }
                         }
                       },

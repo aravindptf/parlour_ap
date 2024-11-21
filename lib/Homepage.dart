@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -10,25 +11,33 @@ import 'package:parlour/servicespage.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 
-// Main Homepage Widget
 class Homepage extends StatefulWidget {
-  const Homepage({super.key});
+  final String? coverImagePath;
+  final String? profileImagePath;
+
+  const Homepage({super.key, this.coverImagePath, this.profileImagePath});
 
   @override
   State<Homepage> createState() => _HomepageState();
 }
 
 class _HomepageState extends State<Homepage> {
-  int selectedIndex = 0; // Track the selected index for bottom navigation
+  int selectedIndex = 0;
 
-  // List of pages to show based on selected index
-  final List<Widget> _pages = [
-    const HomeContent(),     // Home Page
-    const NotificationsPage(), // Notification Page (Make sure this page exists)
-    const ProfilePage(),      // Profile Page (Make sure this page exists)
-  ];
+  final List<Widget> _pages = [];
 
-  // Handle the change in the selected bottom navigation item
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the pages with HomeContent and pass the image paths
+    _pages.add(HomeContent(
+      coverImagePath: widget.coverImagePath,
+      profileImagePath: widget.profileImagePath,
+    ));
+    _pages.add(const NotificationsPage());
+    _pages.add(const ProfilePage());
+  }
+
   void onBottomNavTapped(int index) {
     setState(() {
       selectedIndex = index;
@@ -38,12 +47,7 @@ class _HomepageState extends State<Homepage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
-      
-      // Set the body of the Scaffold based on selected index
       body: _pages[selectedIndex],
-
-      // Bottom Navigation Bar
       bottomNavigationBar: CurvedNavigationBar(
         index: selectedIndex,
         height: 60.0,
@@ -61,14 +65,14 @@ class _HomepageState extends State<Homepage> {
       ),
     );
   }
-
-  // Build the AppBar
-  
 }
 
 // HomeContent Widget: The main content for the homepage
 class HomeContent extends StatefulWidget {
-  const HomeContent({super.key});
+  final String? coverImagePath;
+  final String? profileImagePath;
+
+  const HomeContent({super.key, this.coverImagePath, this.profileImagePath});
 
   @override
   State<HomeContent> createState() => _HomeContentState();
@@ -94,61 +98,61 @@ class _HomeContentState extends State<HomeContent> {
       ],
     );
   }
-AppBar _buildAppBar() {
-  return AppBar(
-    title: Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Text(
-        '', // AppBar title
-        style: GoogleFonts.adamina(color: Colors.white, fontSize: 30),
-      ),
-    ),
-    backgroundColor: Colors.black26,
-    toolbarHeight: 150,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.only(
-        bottomRight: Radius.circular(25),
-        bottomLeft: Radius.circular(25),
-      ),
-    ),
-    automaticallyImplyLeading: false,
-    leading: Padding(
-      padding: const EdgeInsets.all(10.0),
-      child: Transform.translate(
-        offset: Offset(0, -40), // Move the icon 10 pixels upwards (adjust this value as needed)
-        child: IconButton(
-          icon: Icon(
-            Icons.location_on, // Location icon
-            color: Colors.white, // Icon color
-            size: 30, // Icon size
-          ),
-           onPressed: () {
-            // Navigate to the MapPage when the location button is pressed
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const Mappage()),
-            );
-          },
-        ),
-      ),
-    ),
-    actions: [
-      // Optional: You can keep the existing settings button or remove it if not needed
-      Padding(
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      title: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Container(
-          width: 60,
-          height: 60,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-          ),
-          // Add an icon or image for settings
+        child: Text(
+          '', // AppBar title
+          style: GoogleFonts.adamina(color: Colors.white, fontSize: 30),
         ),
       ),
-    ],
-  );
-}
+      backgroundColor: Colors.black26,
+      toolbarHeight: 150,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          bottomRight: Radius.circular(25),
+          bottomLeft: Radius.circular(25),
+        ),
+      ),
+      automaticallyImplyLeading: false,
+      leading: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Transform.translate(
+          offset: Offset(0, -40),
+          child: IconButton(
+            icon: Icon(
+              Icons.location_on,
+              color: Colors.white,
+              size: 30,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const Mappage()),
+              );
+            },
+          ),
+        ),
+      ),
+      actions : [
+        Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: CircleAvatar(
+            radius: 30,
+            backgroundImage: widget.profileImagePath != null
+                ? FileImage(File(widget.profileImagePath!))
+                : null, // Display profile image
+            child: widget.profileImagePath == null
+                ? Icon(Icons.person, size: 30, color: Colors.grey) // Default icon
+                : null,
+          ),
+        ),
+      ],
+    );
+  }
+
   // Build the Carousel Slider
   Widget _buildCarouselSlider() {
     return Column(
@@ -258,7 +262,3 @@ AppBar _buildAppBar() {
     );
   }
 }
-
-
-
-
