@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:parlour/Appoinment.dart';
 import 'package:parlour/Map_page.dart';
-
 import 'package:parlour/notification.dart'; // Import your Notification page
 import 'package:parlour/profile.dart'; // Import your Profile page
 import 'package:parlour/servicespage.dart';
@@ -35,7 +34,7 @@ class _HomepageState extends State<Homepage> {
       profileImagePath: widget.profileImagePath,
     ));
     _pages.add(const NotificationsPage());
-    _pages.add(const ProfilePage());
+    _pages.add(const ProfileScreen());
   }
 
   void onBottomNavTapped(int index) {
@@ -210,7 +209,7 @@ class _HomeContentState extends State<HomeContent> {
           SizedBox(height: 15), // Space between options
           _buildOptionContainer("Services"),
           SizedBox(height: 15), // Space between options
-          _buildOptionContainer("Offers"),
+          _buildOptionContainer("Carousel images"),
         ],
       ),
     );
