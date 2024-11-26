@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:parlour/Homepage.dart'; // Import the rating bar package
+import 'package:parlour/Homepage.dart';
+import 'package:parlour/Map_page.dart'; // Import the rating bar package
 
 class ApiService {
   final String _baseUrl = 'http://192.168.1.35:8086/parlour/ParlourReg';
@@ -87,6 +88,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -109,6 +111,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       backgroundColor: Colors.transparent,
                       elevation: 0,
+                      automaticallyImplyLeading: false,
                     ),
                     const SizedBox(height: 16.0),
                     _buildTextField(
@@ -127,21 +130,55 @@ class _RegisterPageState extends State<RegisterPage> {
                       keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 16.0),
-                    _buildTextField(
-                      label: 'Phone',
-                      onSaved: (value) => _phone = value,
-                      validator: (value) => value!.isEmpty
-                          ? 'Please enter your phone number'
-                          : null,
-                      keyboardType: TextInputType.phone,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(30),
+                        color: Colors.white,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _location ?? "Pick a Location",
+                              style: TextStyle(
+                                color: _location == null
+                                    ? Colors.grey
+                                    : Colors.black,
+                                fontSize: 16,
+                              ),
+                              overflow: TextOverflow
+                                  .ellipsis, // Handle overflow with ellipsis
+                              softWrap: false, // Prevent wrapping
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.location_on, color: Colors.black),
+                            onPressed: () async {
+                              // Navigate to Mappage and wait for a result
+                              final selectedLocation = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => Mappage()),
+                              );
+
+                              // Update the location if a value is returned
+                              if (selectedLocation != null) {
+                                setState(() {
+                                  _location = selectedLocation[
+                                      'locationName'
+                                      ]; 
+                                });
+                              }
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 16.0),
-                    _buildTextField(
-                      label: 'Location',
-                      onSaved: (value) => _location = value,
-                      validator: (value) =>
-                          value!.isEmpty ? 'Please enter your location' : null,
-                    ),
+
                     const SizedBox(height: 16.0),
                     DropdownButtonFormField<String>(
                       decoration: InputDecoration(
@@ -329,6 +366,7 @@ class _RegisterPageState extends State<RegisterPage> {
     FormFieldValidator<String>? validator,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
+    Widget? suffixIcon, // Add this parameter
   }) {
     return TextFormField(
       decoration: InputDecoration(
@@ -337,6 +375,7 @@ class _RegisterPageState extends State<RegisterPage> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
         filled: true,
         fillColor: Colors.white.withOpacity(0.8),
+        suffixIcon: suffixIcon, // Use the suffixIcon here
       ),
       onSaved: onSaved,
       validator: validator,
