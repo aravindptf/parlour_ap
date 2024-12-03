@@ -208,8 +208,6 @@ class _HomeContentState extends State<HomeContent> {
           _buildOptionContainer("Employees"),
           SizedBox(height: 15), // Space between options
           _buildOptionContainer("Services"),
-          SizedBox(height: 15), // Space between options
-          _buildOptionContainer("Carousel images"),
         ],
       ),
     );
@@ -228,7 +226,7 @@ class _HomeContentState extends State<HomeContent> {
            } else if (title == "Services") {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const Servicespage()),
+          MaterialPageRoute(builder: (context) => const ServicesPage()),
         );
         } else {
           // Handle other taps here (e.g., Employees, Services)
