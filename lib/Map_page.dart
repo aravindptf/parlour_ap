@@ -6,7 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
 class Mappage extends StatefulWidget {
-  const Mappage({super.key});
+  const Mappage({super.key,});
 
   @override
   State<Mappage> createState() => _MappageState();
@@ -165,15 +165,16 @@ Future<void> _fetchLocationFromBackend(double latitude, double longitude) async 
                   borderRadius: BorderRadius.circular(10.0),
                 ),
               ),
-              onChanged: (value) {
-                if (value.isNotEmpty) {
-                  _fetchSuggestions(value);
-                } else {
-                  setState(() {
-                    _suggestions.clear();
-                  });
-                }
-              },
+          onChanged: (value) {
+  print("Search input: $value"); // Debug statement
+  if (value.isNotEmpty) {
+    _fetchSuggestions(value);
+  } else {
+    setState(() {
+      _suggestions.clear();
+    });
+  }
+},
               onSubmitted: (value) {
                 if (value.isNotEmpty) {
                   _searchLocation(value);
@@ -189,13 +190,13 @@ Future<void> _fetchLocationFromBackend(double latitude, double longitude) async 
                 itemBuilder: (context, index) {
                   return ListTile(
                     title: Text(_suggestions[index]),
-                    onTap: () {
-                      _searchController.text = _suggestions[index];
-                      _searchLocation(_suggestions[index]);
-                      setState(() {
-                        _suggestions.clear();
-                      });
-                    },
+                  onTap: () {
+  _searchController.text = _suggestions[index];
+  _searchLocation(_suggestions[index]);
+  setState(() {
+    _suggestions.clear(); // Clear suggestions after selection
+  });
+},
                   );
                 },
               ),
@@ -270,57 +271,60 @@ Future<void> _fetchLocationFromBackend(double latitude, double longitude) async 
     );
   }
 
-  Future<void> _fetchSuggestions(String query) async {
-    final url =
-        "https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5";
+void _fetchSuggestions(String query) async {
+  final url =
+      "https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5";
 
-    try {
-      final response = await http.get(Uri.parse(url));
+  print("Fetching suggestions for: $query"); // Debug statement
+  try {
+    final response = await http.get(Uri.parse(url));
+    print("Response status: ${response.statusCode}"); // Debug statement
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final List data = json.decode(response.body);
-        setState(() {
-          _suggestions =
-              data.map((item) => item['display_name'] as String).toList();
-        });
-      }
-    } catch (e) {
-      print("Exception: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to fetch suggestions")),
-      );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final List data = json.decode(response.body);
+      setState(() {
+        _suggestions =
+            data.map((item) => item['display_name'] as String).toList();
+      });
+      print("Suggestions: $_suggestions"); // Debug statement
     }
+  } catch (e) {
+    print("Exception: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to fetch suggestions")),
+    );
   }
-  void _placeMarker(LatLng point) async {
-    final url = "https://nominatim.openstreetmap.org/reverse?lat=${point.latitude}&lon=${point.longitude}&format=json";
+}
+void _placeMarker(LatLng point) async {
+  // Reverse geocoding to get location details (optional)
+  final url = "https://nominatim.openstreetmap.org/reverse?lat=${point.latitude}&lon=${point.longitude}&format=json";
 
-    try {
-      final response = await http.get(Uri.parse(url));
+  try {
+    final response = await http.get(Uri.parse(url));
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final data = json.decode(response.body);
-        String locationName = data['display_name'];
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      // You can still get the location name if needed, but it's not necessary for your requirement
+      final data = json.decode(response.body);
+      String locationName = data['display_name']; 
 
-        setState(() {
-          _tappedLocation = point;
-          _mapController.move(point, 13.0);
-        });
+      setState(() {
+        _tappedLocation = point;
+        _mapController.move(point, 13.0);
+      });
 
-        // Return the selected location back to the RegisterPage
-        Navigator.pop(context, {
-          'latitude': point.latitude,
-          'longitude': point.longitude,
-          'locationName': locationName,
-        });
-      }
-    } catch (e) {
-      print("Exception: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to get location details")),
-      );
+      // Return the selected latitude and longitude back to the previous page
+      Navigator.pop(context, {
+        'latitude': point.latitude,
+        'longitude': point.longitude,
+      });
     }
+  } catch (e) {
+    print("Exception: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to get location details")),
+    );
   }
-
+}
   void _showLocationDetails() {
     if (_locationName != null) {
       showDialog(
@@ -343,34 +347,33 @@ Future<void> _fetchLocationFromBackend(double latitude, double longitude) async 
     }
   }
 
- Future<void> _searchLocation(String query) async {
-    final url =
-        "https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1";
+Future<void> _searchLocation(String query) async {
+  final url =
+      "https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1";
 
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final List<dynamic> results = json.decode(response.body);
-        if (results.isNotEmpty) {
-          final firstResult = results[0];
-          final lat = firstResult['lat'];
-          final lon = firstResult['lon'];
-          final locationName = firstResult['display_name'];
+  try {
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final List<dynamic> results = json.decode(response.body);
+      if (results.isNotEmpty) {
+        final firstResult = results[0];
+        final lat = firstResult['lat'];
+        final lon = firstResult['lon'];
+        final locationName = firstResult['display_name'];
 
-          // Update the map with the searched location
-          _placeMarker(LatLng(double.parse(lat), double.parse(lon)));
+        // Instead of placing a marker directly, call the _placeMarker method
+        _placeMarker(LatLng(double.parse(lat), double.parse(lon)));
 
-          // Update the text field
-          setState(() {
-            _locationName = locationName;
-            _searchController.text = locationName; // Update text field
-          });
-        }
+        // Update the text field
+        setState(() {
+          _searchController.text = locationName; // Update text field
+        });
       }
-    } catch (e) {
-      print("Error searching location: $e");
     }
+  } catch (e) {
+    print("Error searching location: $e");
   }
+}
 }
 
 TileLayer get openStreetMapTileLayer => TileLayer(

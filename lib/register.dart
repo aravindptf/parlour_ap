@@ -1,45 +1,79 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:http/http.dart' as http;
 import 'package:parlour/Homepage.dart';
-import 'package:parlour/Map_page.dart'; // Import the rating bar package
+import 'package:parlour/Map_page.dart';
 
-class ApiService {
-  final String _baseUrl = 'http://192.168.1.35:8086/parlour/ParlourReg';
+Future<bool> registerParlour(Map<String, dynamic> parlourData, XFile? image,
+    XFile? coverImage, XFile? licenseImage) async {
+  var request = http.MultipartRequest(
+    'POST',
+    Uri.parse('http://192.168.1.26:8080/parlour/ParlourReg'),
+  );
 
-  Future<bool> registerUser(Map<String, String> data, XFile? profileImage,
-      XFile? coverImage, XFile? licenceImage) async {
-    try {
-      var request =
-          http.MultipartRequest('POST', Uri.parse('$_baseUrl/register'));
-      request.fields.addAll(data);
+  // Add fields to the request
+  request.fields['parlourName'] = parlourData['parlourName'].toString();
+  request.fields['phoneNumber'] = parlourData['phoneNumber'];
+  request.fields['password'] = parlourData['password'];
+  request.fields['licenseNumber'] = parlourData['licenseNumber'];
+  request.fields['ratings'] = parlourData['ratings'].toString();
+  request.fields['location'] = parlourData['location'];
+  request.fields['description'] = parlourData['description'];
+  request.fields['email'] = parlourData['email'];
+  request.fields['latitude'] = parlourData['latitude'].toString();
+  request.fields['longitude'] = parlourData['longitude'].toString();
 
-      // Adding images if they are selected
-      if (profileImage != null) {
-        request.files.add(await http.MultipartFile.fromPath(
-            'profileImage', profileImage.path));
-      }
-      if (coverImage != null) {
-        request.files.add(
-            await http.MultipartFile.fromPath('coverImage', coverImage.path));
-      }
-      if (licenceImage != null) {
-        request.files.add(await http.MultipartFile.fromPath(
-            'licenceImage', licenceImage.path));
-      }
-
-      var response = await request.send();
-      return response.statusCode == 200;
-    } catch (e) {
-      print('Error during registration: $e');
-      return false;
+  // Add images to the request with error handling
+  try {
+    if (image != null && image.path.isNotEmpty) {
+      request.files.add(await http.MultipartFile.fromPath(
+        'image',
+        image.path,
+      ));
     }
+
+    if (coverImage != null && coverImage.path.isNotEmpty) {
+      request.files.add(await http.MultipartFile.fromPath(
+        'coverImage',
+        coverImage.path,
+      ));
+    }
+
+    if (licenseImage != null && licenseImage.path.isNotEmpty) {
+      request.files.add(await http.MultipartFile.fromPath(
+        'licenseImage',
+        licenseImage.path,
+      ));
+    }
+  } catch (e) {
+    print('Error adding files: $e');
+    return false; // Indicate failure
   }
+
+  // Send the request
+  var response = await request.send();
+
+if (response.statusCode == 200 && response.statusCode < 300) {
+  print('Registration successful');
+  return true;
+} else {
+  String responseBody = await response.stream.bytesToString();
+  print('Registration failed: $responseBody');
+  return false;
+}
 }
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({Key? key}) : super(key: key);
+  final FormFieldValidator<String>? validator;
+  final FormFieldSetter<String>? onSaved;
+
+  const RegisterPage({
+    Key? key,
+    this.validator,
+    this.onSaved,
+  }) : super(key: key);
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -48,32 +82,39 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
+  bool _obscureText = true;
+  String? _latitude; // Variable to hold the selected latitude
+  String? _longitude; // Variable to hold the selected longitude
 
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  String? _parlourname,
+  String? _parlourName,
       _email,
-      _phone,
+      _phoneNumber,
       _password,
       _location,
       _description,
-      _licenceNumber,
-      _category;
-  final ApiService _apiService = ApiService();
+      _licenseNumber;
 
-  XFile? _profileImage;
+  XFile? _image;
   XFile? _coverImage;
-  XFile? _licenceImage;
+  XFile? _licenseImage;
+
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscureText = !_obscureText;
+    });
+  }
 
   Future<void> _pickImage(String type) async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     setState(() {
       if (type == 'profile') {
-        _profileImage = pickedFile;
+        _image = pickedFile;
       } else if (type == 'cover') {
         _coverImage = pickedFile;
       } else if (type == 'licence') {
-        _licenceImage = pickedFile;
+        _licenseImage = pickedFile;
       }
     });
   }
@@ -92,85 +133,259 @@ class _RegisterPageState extends State<RegisterPage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            'assets/IMG_20240810_125448.jpg',
-            fit: BoxFit.cover,
-          ),
+          // Image.asset(
+          //   'assets/equipment-hairdresser-pink-background-space-text_136961-477.avif',
+          //   fit: BoxFit.cover,
+          // ),
           SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Form(
                 key: _formKey,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AppBar(
-                      title: const Center(
-                        child: Text('Register',
-                            style: TextStyle(color: Colors.black)),
+                    SizedBox(
+                      height: 20,
+                    ),
+                    Center(
+                      child: Text(
+                        'Register',
+                        style: TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
                       ),
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
-                      automaticallyImplyLeading: false,
                     ),
-                    const SizedBox(height: 16.0),
-                    _buildTextField(
-                      label: 'Parlour Name',
-                      onSaved: (value) => _parlourname = value,
-                      validator: (value) => value!.isEmpty
-                          ? 'Please enter your parlour name'
-                          : null,
+                    SizedBox(height: 10),
+                    SizedBox(height: 20),
+                    TextFormField(
+                      decoration: InputDecoration(
+                        hintText: 'Parlour Name',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter parlour name';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        _parlourName = value;
+                      },
                     ),
-                    const SizedBox(height: 16.0),
-                    _buildTextField(
-                      label: 'Email',
-                      onSaved: (value) => _email = value,
-                      validator: (value) =>
-                          value!.isEmpty ? 'Please enter your email' : null,
-                      keyboardType: TextInputType.emailAddress,
+                    SizedBox(
+                      height: 16,
                     ),
-                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      decoration: InputDecoration(
+                        hintText: 'Email',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter email';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        _email = value;
+                      },
+                    ),
+                    SizedBox(
+                      height: 16,
+                    ),
+                    TextFormField(
+                      decoration: InputDecoration(
+                        hintText: 'Phone Number',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter phone number';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        _phoneNumber = value;
+                      },
+                    ),
+                    SizedBox(
+                      height: 16,
+                    ),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscureText,
+                      decoration: InputDecoration(
+                        hintText: 'Password',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureText
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: _togglePasswordVisibility,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter password';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        _password = value;
+                      },
+                    ),
+                    SizedBox(
+                      height: 16,
+                    ),
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureText,
+                      decoration: InputDecoration(
+                        hintText: 'Confirm Password',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value != _passwordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(
+                      height: 16,
+                    ),
+                    TextFormField(
+                      decoration: InputDecoration(
+                        hintText: 'License Number',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter license number';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        _licenseNumber = value;
+                      },
+                    ),
+                    SizedBox(
+                      height: 16,
+                    ),
+                    TextFormField(
+                      decoration: InputDecoration(
+                        hintText: 'State',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter location';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        _location = value;
+                      },
+                    ),
+                    SizedBox(
+                      height: 16,
+                    ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(30),
-                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30.0),
+                        border: Border.all(color: Colors.grey), // Border color
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: Text(
-                              _location ?? "Pick a Location",
-                              style: TextStyle(
-                                color: _location == null
-                                    ? Colors.grey
-                                    : Colors.black,
-                                fontSize: 16,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 16, horizontal: 20),
+                              child: Text(
+                                _latitude != null && _longitude != null
+                                    ? 'Lat: $_latitude, Lon: $_longitude' // Display latitude and longitude
+                                    : 'Pick a Location', // Placeholder
+                                style: TextStyle(
+                                    color: Colors.black), // Text color
                               ),
-                              overflow: TextOverflow
-                                  .ellipsis, // Handle overflow with ellipsis
-                              softWrap: false, // Prevent wrapping
                             ),
                           ),
                           IconButton(
-                            icon: Icon(Icons.location_on, color: Colors.black),
+                            icon: Icon(Icons.location_on,
+                                color: Colors.black), // Location icon
                             onPressed: () async {
-                              // Navigate to Mappage and wait for a result
-                              final selectedLocation = await Navigator.push(
+                              // Navigate to Mappage and wait for the result
+                              final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) => Mappage()),
                               );
 
-                              // Update the location if a value is returned
-                              if (selectedLocation != null) {
+                              // Check if the result is not null and update the latitude and longitude
+                              if (result != null) {
                                 setState(() {
-                                  _location = selectedLocation[
-                                      'locationName'
-                                      ]; 
+                                  _latitude = result['latitude']
+                                      .toString(); // Update latitude
+                                  _longitude = result['longitude']
+                                      .toString(); // Update longitude
                                 });
                               }
                             },
@@ -178,177 +393,143 @@ class _RegisterPageState extends State<RegisterPage> {
                         ],
                       ),
                     ),
-
-                    const SizedBox(height: 16.0),
-                    DropdownButtonFormField<String>(
+                    SizedBox(
+                      height: 16,
+                    ),
+                    TextFormField(
                       decoration: InputDecoration(
-                        labelText: 'Category',
-                        labelStyle: const TextStyle(color: Colors.black),
+                        hintText: 'Description',
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30)),
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
                       ),
-                      value: _category,
-                      items: ['Men', 'Women', 'Unisex'].map((String category) {
-                        return DropdownMenuItem<String>(
-                          value: category,
-                          child: Text(category),
-                        );
-                      }).toList(),
-                      onChanged: (value) => setState(() => _category = value),
-                      validator: (value) =>
-                          value == null ? 'Please select a category' : null,
-                      onSaved: (value) => _category = value,
-                    ),
-                    const SizedBox(height: 16.0),
-                    _buildTextField(
-                      label: 'Description',
-                      onSaved: (value) => _description = value,
-                      validator: (value) =>
-                          value!.isEmpty ? 'Please enter a description' : null,
-                      maxLines: 3,
-                    ),
-                    // Add the Rating Field (non-interactive)
-
-                    const Text('Rating:', style: TextStyle(fontSize: 18)),
-                    RatingBar.builder(
-                      initialRating: 0,
-                      minRating: 0,
-                      itemCount: 5,
-                      itemSize: 30,
-                      direction: Axis.horizontal,
-                      allowHalfRating: true,
-                      itemPadding: const EdgeInsets.symmetric(horizontal: 1),
-                      ignoreGestures: true, // Prevent user interaction
-                      itemBuilder: (context, index) => const Icon(
-                        Icons.star,
-                        color: Colors.amber,
-                      ),
-                      onRatingUpdate: (rating) {},
-                    ),
-                    const SizedBox(height: 16.0),
-                    _buildTextField(
-                      label: 'License Number',
-                      onSaved: (value) => _licenceNumber = value,
-                      validator: (value) => value!.isEmpty
-                          ? 'Please enter your license number'
-                          : null,
-                    ),
-                    const SizedBox(height: 16.0),
-                    _buildPasswordField(
-                      label: 'Password',
-                      controller: _passwordController,
-                      onSaved: (value) => _password = value,
-                    ),
-                    const SizedBox(height: 16.0),
-                    _buildPasswordField(
-                      label: 'Confirm Password',
-                      controller: _confirmPasswordController,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please confirm your password';
-                        } else if (_passwordController.text != value) {
-                          return 'Passwords do not match';
+                          return 'Please enter description';
                         }
                         return null;
                       },
-                    ),
-                    const SizedBox(height: 16.0),
-
-                    // Image Uploads
-                    GestureDetector(
-                      onTap: () => _pickImage('profile'),
-                      child: _buildImageUploadContainer(
-                        'Upload Profile Picture',
-                        _profileImage != null
-                            ? 'Profile Picture Selected'
-                            : 'Upload Profile Picture',
-                      ),
-                    ),
-                    const SizedBox(height: 16.0),
-                    GestureDetector(
-                      onTap: () => _pickImage('cover'),
-                      child: _buildImageUploadContainer(
-                        'Upload Cover Image',
-                        _coverImage != null
-                            ? 'Cover Image Selected'
-                            : 'Upload Cover Image',
-                      ),
-                    ),
-                    const SizedBox(height: 16.0),
-                    GestureDetector(
-                      onTap: () => _pickImage('licence'),
-                      child: _buildImageUploadContainer(
-                        'Upload Parlour Licence Image',
-                        _licenceImage != null
-                            ? 'Licence Image Selected'
-                            : 'Upload Parlour Licence Image',
-                      ),
-                    ),
-                    const SizedBox(height: 20.0),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          _formKey.currentState!.save();
-                          final registrationData = {
-                            'parlourName': _parlourname!,
-                            'location': _location!,
-                            'email': _email!,
-                            'phone': _phone!,
-                            'password': _password!,
-                            'description': _description!,
-                            'licenceNumber': _licenceNumber!,
-                            'category': _category!,
-                          };
-                          // Navigator.push(
-                          //     context,
-                          //     MaterialPageRoute(
-                          //       builder: (context) => PreviewPage(
-                          //         parlourName: _parlourname!,
-                          //         location: _location!,
-                          //         email: _email!,
-                          //         phone: _phone!,
-                          //         password: _password!,
-                          //         description: _description!,
-                          //         licenceNumber: _licenceNumber!,
-                          //         category: _category!,
-                          //       ),
-                          //     ));
-                          bool isRegistered = await _apiService.registerUser(
-                              registrationData,
-                              _profileImage,
-                              _coverImage,
-                              _licenceImage);
-
-                          if (isRegistered) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Text(
-                                    'Registration successful for $_parlourname')));
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text(
-                                        'Registration failed. Please try again.')));
-                          }
-                          if (isRegistered) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => Homepage(
-                                  coverImagePath: _coverImage?.path,
-                                  profileImagePath: _profileImage?.path,
-                                ),
-                              ),
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Text(
-                                    'Registration successful for $_parlourname')));
-                          }
-                        }
+                      onSaved: (value) {
+                        _description = value;
                       },
-                      child: const Text('Submit',
-                          style: TextStyle(color: Colors.black)),
+                      minLines: 3,
+                      maxLines: 5,
+                    ),
+                    SizedBox(height: 20),
+                    Text('Select Images', style: TextStyle(fontSize: 18)),
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          children: [
+                            GestureDetector(
+                              onTap: () => _pickImage('profile'),
+                              child: Container(
+                                width: 100,
+                                height: 100,
+                                color: Colors.grey[300],
+                                child: _image == null
+                                    ? Icon(Icons.add_a_photo)
+                                    : Image.file(File(_image!.path),
+                                        fit: BoxFit.cover),
+                              ),
+                            ),
+                            Text('Profile Image'),
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            GestureDetector(
+                              onTap: () => _pickImage('cover'),
+                              child: Container(
+                                width: 100,
+                                height: 100,
+                                color: Colors.grey[300],
+                                child: _coverImage == null
+                                    ? Icon(Icons.add_a_photo)
+                                    : Image.file(File(_coverImage!.path),
+                                        fit: BoxFit.cover),
+                              ),
+                            ),
+                            Text('Cover Image'),
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            GestureDetector(
+                              onTap: () => _pickImage('licence'),
+                              child: Container(
+                                width: 100,
+                                height: 100,
+                                color: Colors.grey[300],
+                                child: _licenseImage == null
+                                    ? Icon(Icons.add_a_photo)
+                                    : Image.file(File(_licenseImage!.path),
+                                        fit: BoxFit.cover),
+                              ),
+                            ),
+                            Text('License Image'),
+                          ],
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            _formKey.currentState!.save();
+                            Map<String, dynamic> parlourData = {
+                              'parlourName': _parlourName,
+                              'email': _email,
+                              'phoneNumber': _phoneNumber,
+                              'password': _password,
+                              'licenseNumber': _licenseNumber,
+                              'location': _location,
+                              'description': _description,
+                              'ratings': 0, // Default rating
+                              'latitude': _latitude,
+                              'longitude': _longitude
+                            };
+
+                            bool success = await registerParlour(parlourData,
+                                _image, _coverImage, _licenseImage);
+                            if (success) {
+                              // Navigate to the next page or show success message
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => Homepage()),
+                              );
+                            } else {
+                              // Show error message
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        'Registration failed. Please try again.')),
+                              );
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.black, // Text color
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 50, vertical: 15), // Padding
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(25), // Rounded corners
+                          ),
+                          elevation: 5, // Shadow effect
+                        ),
+                        child: Text('Register'),
+                      ),
                     ),
                   ],
                 ),
@@ -356,65 +537,6 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required String label,
-    required FormFieldSetter<String> onSaved,
-    FormFieldValidator<String>? validator,
-    TextInputType keyboardType = TextInputType.text,
-    int maxLines = 1,
-    Widget? suffixIcon, // Add this parameter
-  }) {
-    return TextFormField(
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.black),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.8),
-        suffixIcon: suffixIcon, // Use the suffixIcon here
-      ),
-      onSaved: onSaved,
-      validator: validator,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-    );
-  }
-
-  Widget _buildPasswordField({
-    required String label,
-    required TextEditingController controller,
-    FormFieldValidator<String>? validator,
-    FormFieldSetter<String>? onSaved,
-  }) {
-    return TextFormField(
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.black),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.8),
-      ),
-      controller: controller,
-      obscureText: true,
-      validator: validator,
-      onSaved: onSaved,
-    );
-  }
-
-  Widget _buildImageUploadContainer(String label, String buttonText) {
-    return Container(
-      height: 100,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.grey),
-      ),
-      child: Center(
-        child: Text(buttonText, style: const TextStyle(color: Colors.black)),
       ),
     );
   }
