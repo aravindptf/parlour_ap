@@ -25,7 +25,7 @@ class _LoginPageState extends State<LoginPage> {
       final String password = _passwordController.text;
 
       // Replace with your backend URL
-      final url = 'http://192.168.1.26:8080/parlour/ParlourLogin';
+      final url = 'http://192.168.1.26:8086/parlour/ParlourLogin';
 
       try {
         final response = await http.post(
