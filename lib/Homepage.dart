@@ -121,19 +121,6 @@ class _HomeContentState extends State<HomeContent> {
         padding: const EdgeInsets.all(10.0),
         child: Transform.translate(
           offset: Offset(0, -40),
-          child: IconButton(
-            icon: Icon(
-              Icons.location_on,
-              color: Colors.white,
-              size: 30,
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const Mappage()),
-              );
-            },
-          ),
         ),
       ),
       actions : [
