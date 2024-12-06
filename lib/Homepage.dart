@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:parlour/Appoinment.dart';
+import 'package:parlour/Employees.dart';
 import 'package:parlour/Map_page.dart';
 import 'package:parlour/notification.dart'; // Import your Notification page
 import 'package:parlour/profile.dart'; // Import your Profile page
 import 'package:parlour/servicespage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 
@@ -42,6 +44,14 @@ class _HomepageState extends State<Homepage> {
       selectedIndex = index;
     });
   }
+//   void _getToken() async {
+//   SharedPreferences prefs = await SharedPreferences.getInstance();
+//   String? token = prefs.getString('auth_token');
+
+//   print('Retrieved Token: $token'); // Use the token as needed
+// }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -227,6 +237,11 @@ class _HomeContentState extends State<HomeContent> {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ServicesPage()),
+        );
+         } else if (title == "Employees") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const Employees()),
         );
         } else {
           // Handle other taps here (e.g., Employees, Services)
