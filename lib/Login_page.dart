@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:parlour/Homepage.dart';
 import 'package:parlour/register.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,56 +20,47 @@ class _LoginPageState extends State<LoginPage> {
   // Boolean variable to toggle the password visibility
   bool _isPasswordVisible = false;
 
-  void _login() async {
-    if (_formKey.currentState!.validate()) {
-      final String username = _usernameController.text;
-      final String password = _passwordController.text;
+ void _login() async {
+  if (_formKey.currentState!.validate()) {
+    final String username = _usernameController.text;
+    final String password = _passwordController.text;
 
-      // Replace with your backend URL
-      final url = 'http://192.168.1.26:8080/parlour/ParlourLogin';
+    final url = 'http://192.168.1.26:8080/parlour/ParlourLogin';
 
-      try {
-        final response = await http.post(
-          Uri.parse(url),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'email': username,
-            'password': password,
-          }),
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': username,
+          'password': password,
+        }),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        final String token = jsonResponse['token']; // Adjust based on your API response
+
+        // Store the token in SharedPreferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', token);
+
+        // Show a dialog with additional information
+        _showInfoDialog('Login successful!');
+
+        // Navigate to the home page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Homepage()),
         );
-
-        print('Response status: ${response.statusCode}');
-        print('Response headers: ${response.headers}');
-        print('Response body: ${response.body}'); // Log the full response body
-
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          // Assuming the response body is JSON
-          final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-          print('Full Response: $jsonResponse'); // Log full response map
-
-          // Access the token and other fields you might need
-          final String token = jsonResponse['token']; // Change 'token' to your actual key
-          final String userMessage = jsonResponse['message'] ?? ''; // Example of another field
-
-          print('Token: $token');
-          print('User Message: $userMessage');
-
-          // Show a dialog with additional information
-          _showInfoDialog('Login successful! $userMessage');
-
-          // Navigate to the home page
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => Homepage()), // Pass token
-          );
-        } else {
-          _showErrorDialog('Login failed. Please check your credentials. Response: ${response.body}');
-        }
-      } catch (error) {
-        _showErrorDialog('An error occurred. Please try again later.');
+      } else {
+        _showErrorDialog('Login failed. Please check your credentials. Response: ${response.body}');
       }
+    } catch (error) {
+      _showErrorDialog('An error occurred. Please try again later.');
     }
   }
+}
 
   void _showErrorDialog(String message) {
     showDialog(

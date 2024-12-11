@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -73,6 +74,10 @@ bool _validateFields() {
 
   return true;
 }
+Future<String?> _getToken() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  return prefs.getString('token');
+}
 
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
@@ -82,69 +87,107 @@ bool _validateFields() {
       });
     }
   }
+  Future<void> refreshToken() async {
+  final url = Uri.parse('http://yourapi.com/refresh-token'); // Replace with your actual refresh token URL
+  String? oldToken = await _getToken(); // Get the current token
 
-  Future<void> _saveServiceToBackend(Map<String, dynamic> serviceData) async {
-    final url = Uri.parse('http://192.168.1.26:8080/Items/AddItems');
+  if (oldToken == null) {
+    print('No token available to refresh.');
+    return; // Handle the case where there is no token
+  }
 
-    try {
-      // Retrieve the token
+  try {
+    final response = await http.post(
+      url,
+      headers: {
+        'Authorization': 'Bearer $oldToken', // Send the old token for validation
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      String newToken = responseData['token']; // Adjust based on your API response
+
+      // Store the new token in SharedPreferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? token = prefs.getString('token');
+      await prefs.setString('token', newToken);
+      print('Token refreshed successfully: $newToken');
+    } else {
+      print('Failed to refresh token: ${response.body}');
+      // Handle token refresh failure (e.g., log out the user)
+      // You might want to navigate to the login page or show an error message
+    }
+  } catch (e) {
+    print('Error refreshing token: $e');
+    // Handle any errors that occur during the refresh process
+  }
+}
 
-      if (token == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Token is missing')),
-        );
-        return;
-      }
+Future<void> _saveServiceToBackend(Map<String, dynamic> serviceData) async {
+  final url = Uri.parse('http://192.168.1.26:8080/Items/AddItems');
 
-      // Create a multipart request
-      var request = http.MultipartRequest('POST', url)
-        ..headers['Authorization'] = 'Bearer $token'
-        ..headers['Cookie'] = 'JSESSIONID=7B0AE3F21E3ED040AB30A987E399E1E8' // Optional: Add this if necessary
-        ..fields['itemName'] = serviceData['itemName']
-        ..fields['price'] = serviceData['price']
-        ..fields['serviceTime'] = serviceData['serviceTime']
-        ..fields['categoryId'] = serviceData['categoryId']
-        ..fields['subCategoryId'] = serviceData['subCategoryId']
-        ..fields['subSubCategoryId'] = serviceData['subSubCategoryId']
-        ..fields['parlourId'] = serviceData['parlourId']
-        ..fields['description'] = serviceData['description']
-        ..fields['availability'] = serviceData['availability'] ? 'true' : 'false';
+  try {
+    String? token = await _getToken(); // Get the latest token
 
-      // Add the image file if available
-      if (_selectedImage != null) {
-        request.files.add(await http.MultipartFile.fromPath(
-          'itemImage',
-          _selectedImage!.path,
-          filename: 'itemImage.jpg',
-        ));
-      }
-
-      // Send the request
-      final response = await request.send();
-
-      // Parse and handle the response
-      final responseBody = await response.stream.bytesToString();
-
-      if (response.statusCode == 201) {
-        print('Service added successfully');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Service added successfully')),
-        );
-      } else {
-        print('Failed to add service: $responseBody');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to add service: $responseBody')),
-        );
-      }
-    } catch (e) {
-      print('Error: $e');
+    if (token == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        const SnackBar(content: Text('Token is missing')),
+      );
+      return;
+    }
+
+    // Create a multipart request
+    var request = http.MultipartRequest('POST', url)
+      ..headers['Authorization'] = 'Bearer $token'
+      ..fields['itemName'] = serviceData['itemName']
+      ..fields['price'] = serviceData['price']
+      ..fields['serviceTime'] = serviceData['serviceTime']
+      ..fields['categoryId'] = serviceData['categoryId']
+      ..fields['subCategoryId'] = serviceData['subCategoryId']
+      ..fields['subSubCategoryId'] = serviceData['subSubCategoryId']
+      ..fields['parlourId'] = serviceData['parlourId']
+      ..fields['description'] = serviceData['description']
+      ..fields['availability'] = serviceData['availability'] ? 'true' : 'false';
+
+    // Add the image file if available
+    if (_selectedImage != null) {
+      request.files.add(await http.MultipartFile.fromPath(
+        'itemImage',
+        _selectedImage!.path,
+        filename: 'itemImage.jpg',
+      ));
+    }
+
+    // Send the request
+    final response = await request.send();
+
+    // Parse and handle the response
+    final responseBody = await response.stream.bytesToString();
+
+    if (response.statusCode == 201) {
+      print('Service added successfully');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Service added successfully')),
+      );
+    } else if (response.statusCode == 401) { // Unauthorized
+      // Token might be expired, try to refresh it
+      await refreshToken(); // Implement this method to refresh the token
+      // Retry the request after refreshing the token
+      await _saveServiceToBackend(serviceData);
+    } else {
+      print('Failed to add service: $responseBody');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add service: $responseBody')),
       );
     }
+  } catch (e) {
+    print('Error: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
