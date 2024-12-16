@@ -3,11 +3,21 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:parlour/Homepage.dart';
-import 'package:parlour/Login_page.dart';
-import 'package:parlour/notification.dart';
+import 'editprofie.dart'; // Ensure EditProfilePage is in this file
+
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  final String name;
+  final String email;
+  final String phone;
+  final String address;
+
+  const ProfileScreen({
+    Key? key,
+    required this.name,
+    required this.email,
+    required this.phone,
+    required this.address,
+  }) : super(key: key);
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -15,20 +25,19 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ImagePicker _picker = ImagePicker();
-  XFile? _profileImage; // Holds the selected profile image
+  XFile? _profileImage;
 
-  // Controllers to handle text input
-  final TextEditingController _nameController =
-      TextEditingController(text: ''); // Default name
-  final TextEditingController _emailController =
-      TextEditingController(text: ''); // Default email
+  // Editable data (initialize with passed-in values)
+  late String _name = widget.name;
+  late String _email = widget.email;
+  late String _phone = widget.phone;
+  late String _address = widget.address;
 
   Future<void> _pickImage() async {
-    // Show options for picking image
     final XFile? image = await _picker.pickImage(
-      source: ImageSource.gallery, // or ImageSource.camera for camera
+      source: ImageSource.gallery,
       maxWidth: 600,
-      imageQuality: 85, // Adjust quality to save data
+      imageQuality: 85,
     );
 
     if (image != null) {
@@ -38,12 +47,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _navigateToEditProfile() async {
+    // Wait for data to return from EditProfilePage
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditProfilePage(
+          initialName: _name,
+          initialEmail: _email,
+          initialPhone: _phone,
+          initialAddress: _address,
+        ),
+      ),
+    );
+
+    // Update the profile data if new data is returned
+    if (result != null && result is Map<String, String>) {
+      setState(() {
+        _name = result['name']!;
+        _email = result['email']!;
+        _phone = result['phone']!;
+        _address = result['address']!;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        _navigateToHomePage(context);
-        return false; // Prevent default back button behavior
+        Navigator.pop(context);
+        return false;
       },
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -51,22 +85,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: Text(
             'Profile',
             style: GoogleFonts.adamina(color: Colors.white),
-          
           ),
           centerTitle: true,
           backgroundColor: Colors.black,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => _navigateToHomePage(context),
-          ),
         ),
-        body: Stack(
-          children: [
-            Positioned(
-              top: 20,
-              left: 20,
-              right: 20,
-              child: Center(
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              SizedBox(height: 20),
+              Center(
                 child: Stack(
                   children: [
                     CircleAvatar(
@@ -76,7 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               'https://i0.wp.com/therighthairstyles.com/wp-content/uploads/2021/09/2-mens-undercut.jpg?resize=500%2C503',
                             )
                           : FileImage(File(_profileImage!.path))
-                              as ImageProvider, // Show selected image
+                              as ImageProvider,
                     ),
                     Positioned(
                       bottom: 0,
@@ -88,89 +115,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: Colors.black,
                           shape: BoxShape.circle,
                         ),
-                        child: Center(
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.camera_alt_outlined,
-                              size: 16,
-                            ),
-                            color: Colors.white,
-                            onPressed: _pickImage, // Open image picker
-                          ),
+                        child: IconButton(
+                          icon: Icon(Icons.camera_alt_outlined, size: 16),
+                          color: Colors.white,
+                          onPressed: _pickImage,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-            // Positioned name and email
-            Positioned(
-              top: 130,
-              left: 60, // Adjust the left alignment to 0
-              right: 0,
-              child: Center(
+              SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.center, // Center the text horizontally
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Text(
+                        _name,
+                        style: GoogleFonts.adamina(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    ProfileDetailItem(
+                      icon: Icons.person,
+                      label: 'Name',
+                      value: _name,
+                    ),
+                    ProfileDetailItem(
+                      icon: Icons.email,
+                      label: 'Email',
+                      value: _email,
+                    ),
+                    ProfileDetailItem(
+                      icon: Icons.phone,
+                      label: 'Phone',
+                      value: _phone,
+                    ),
+                    ProfileDetailItem(
+                      icon: Icons.location_on,
+                      label: 'Address',
+                      value: _address,
+                    ),
+                  ],
                 ),
               ),
-            ),
-            Positioned(
-              top: 200,
-              left: 16,
-              right: 16,
-              bottom: 0,
-              child: ListView(
-                children: [
-                  ListTile(
-                    leading: Icon(Icons.person),
-                    title: Text('Edit Profile'),
-                    trailing: Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      // Navigate to Edit Profile Screen
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.history),
-                    title: Text('Booking History'),
-                    trailing: Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      // Navigate to Booking History Screen
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.notifications),
-                    title: Text('Notifications'),
-                    trailing: Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => NotificationsPage()),
-                      );
-                    },
-                  ),
-               
-                  ListTile(
-                    leading: Icon(Icons.logout),
-                    title: Text('Logout'),
-                    trailing: Icon(Icons.arrow_forward_ios),
-                    onTap: () => _logout(context),
-                  ),
-                ],
+              Divider(),
+              // Other options
+              ListTile(
+                leading: Icon(Icons.edit),
+                title: Text('Edit Profile'),
+                trailing: Icon(Icons.arrow_forward_ios),
+                onTap: _navigateToEditProfile,
               ),
-            ),
-          ],
+              ListTile(
+                leading: Icon(Icons.history),
+                title: Text('Booking History'),
+                trailing: Icon(Icons.arrow_forward_ios),
+                onTap: () {
+                  // Navigate to Booking History Screen
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.logout),
+                title: Text('Logout'),
+                trailing: Icon(Icons.arrow_forward_ios),
+                onTap: () => _logout(context),
+              ),
+            ],
+          ),
         ),
       ),
-    );
-  }
-
-  void _navigateToHomePage(BuildContext context) {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => Homepage()),
-      (Route<dynamic> route) => false,
     );
   }
 
@@ -179,27 +197,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Logout'),
-          content: Text('Are you sure you want to logout?'),
-          actions: <Widget>[
+          title: Text(
+            'Confirm Logout',
+            style: GoogleFonts.adamina(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            'Are you sure you want to log out?',
+            style: GoogleFonts.adamina(fontSize: 16),
+          ),
+          actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
               },
-              child: Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.adamina(color: Colors.black),
+              ),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Logged out successfully'),
-                )); 
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => LoginPage()),
-                  (Route<dynamic> route) => false,
-                );
+                _performLogout(); // Navigate to login page
               },
-              child: Text('Logout'),
+              child: Text(
+                'Logout',
+                style: GoogleFonts.adamina(color: Colors.red),
+              ),
             ),
           ],
         );
@@ -207,60 +231,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _editUserInfo(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            'Edit Information',
-            style:
-                GoogleFonts.adamina(fontSize: 18, fontWeight: FontWeight.bold),
+  void _performLogout() {
+    // Navigate to the login page and clear all previous routes
+    Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+  }
+}
+
+class ProfileDetailItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const ProfileDetailItem({
+    Key? key,
+    required this.icon,
+    required this.label,
+    required this.value,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: Colors.black,
           ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Name',
-                    labelStyle: TextStyle(fontSize: 14),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: Colors.black),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '$label: $value',
+              style: GoogleFonts.adamina(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  // Update the UI with new values
-                });
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text('Save', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-              ),
-            ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
   }
 }

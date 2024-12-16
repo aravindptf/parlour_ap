@@ -12,12 +12,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
 
   // Static data for demonstration purposes
   final List<Map<String, String>> allAppointments = [
-    {"time": "10:00 AM", "customer": "John Doe", "service": "Haircut", "filter": "Daily"},
-    {"time": "11:00 AM", "customer": "Alice Johnson", "service": "Hair Spa", "filter": "Daily"},
-    {"time": "12:00 PM", "customer": "Jane Smith", "service": "Manicure", "filter": "Weekly"},
-    {"time": "01:00 PM", "customer": "Michael Lee", "service": "Facial", "filter": "Monthly"},
-    {"time": "03:00 PM", "customer": "Sarah Brown", "service": "Pedicure", "filter": "Weekly"},
-    {"time": "04:00 PM", "customer": "David White", "service": "Haircut", "filter": "Monthly"},
+    {"time": "10:00 AM", "customer": "John Doe", "service": "Haircut", "filter": "Daily", "status": "Pending"},
+    {"time": "11:00 AM", "customer": "Alice Johnson", "service": "Hair Spa", "filter": "Daily", "status": "On Progress"},
+    {"time": "12:00 PM", "customer": "Jane Smith", "service": "Manicure", "filter": "Weekly", "status": "Pending"},
+    {"time": "01:00 PM", "customer": "Michael Lee", "service": "Facial", "filter": "Monthly", "status": "On Progress"},
+    {"time": "03:00 PM", "customer": "Sarah Brown", "service": "Pedicure", "filter": "Weekly", "status": "Pending"},
+    {"time": "04:00 PM", "customer": "David White", "service": "Haircut", "filter": "Monthly", "status": "On Progress"},
   ];
 
   @override
@@ -83,7 +83,30 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             contentPadding: EdgeInsets.all(16),
             title: Text('${appointment['customer']} - ${appointment['service']}'),
             subtitle: Text('Time: ${appointment['time']}'),
-            trailing: Icon(Icons.chevron_right),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  appointment['status']!,
+                  style: TextStyle(
+                    color: appointment['status'] == 'Pending'
+                        ? Colors.red
+                        : appointment['status'] == 'On Progress'
+                            ? Colors.blue
+                            : Colors.green,
+                  ),
+                ),
+                SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      appointment['status'] = 'Completed';
+                    });
+                  },
+                  child: Text('Complete'),
+                ),
+              ],
+            ),
             onTap: () {
               // Handle tap if needed (e.g., show details of the appointment)
             },

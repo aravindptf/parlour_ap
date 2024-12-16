@@ -25,7 +25,7 @@ class _LoginPageState extends State<LoginPage> {
     final String username = _usernameController.text;
     final String password = _passwordController.text;
 
-    final url = 'http://192.168.1.26:8080/parlour/ParlourLogin';
+    final url = 'http://192.168.1.4:8080/parlour/ParlourLogin';
 
     try {
       final response = await http.post(

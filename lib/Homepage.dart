@@ -36,7 +36,7 @@ class _HomepageState extends State<Homepage> {
       profileImagePath: widget.profileImagePath,
     ));
     _pages.add(const NotificationsPage());
-    _pages.add(const ProfileScreen());
+    _pages.add(const ProfileScreen(name: '', email: '', phone: '', address: '',));
   }
 
   void onBottomNavTapped(int index) {
